@@ -9,6 +9,8 @@ import { CopyShader } from 'three/examples/jsm/shaders/CopyShader.js'
 import vertexShader from './shaders/vertex.glsl'
 import fragmentShader from './shaders/fragment.glsl'
 
+import colorTexture from './images/img.jpg'
+
 const startApp = () => {
   const scene = useScene()
   const camera = useCamera()
@@ -36,12 +38,17 @@ const startApp = () => {
 
 
   // meshes
-  const geometry = new THREE.IcosahedronGeometry(1, 5)
-  const material = new THREE.MeshStandardMaterial()
+  const geometry = new THREE.PlaneGeometry(1)
+  const material = new THREE.ShaderMaterial({
+    vertexShader: vertexShader,
+    fragmentShader: fragmentShader
+  })
 
   const ico = new THREE.Mesh(geometry, material)
   scene.add(ico)
 
+  material.uniforms.uRadius = {value: 0.5}
+  material.uniforms.uTexture = {value: new THREE.TextureLoader().load(colorTexture)}
 
 
 
@@ -54,7 +61,10 @@ const startApp = () => {
   // GUI
   const cameraFolder = gui.addFolder('Camera')
   cameraFolder.add(camera.position, 'z', 0, 10)
+  cameraFolder.add(material.uniforms.uRadius,"value",0,1).min(0).max(1)
+
   cameraFolder.open()
+
 
   // postprocessing
   const renderTargetParameters = {
