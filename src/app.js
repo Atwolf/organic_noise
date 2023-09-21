@@ -6,24 +6,23 @@ import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js'
 import { BlendShader } from 'three/examples/jsm/shaders/BlendShader.js'
 import { CopyShader } from 'three/examples/jsm/shaders/CopyShader.js'
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js'
-import { FontLoader } from 'three/examples/jsm/loaders/FontLoader.js'
-import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry.js'
+
 
 import vertexShader from './shaders/vertex.glsl'
 import fragmentShader from './shaders/fragment.glsl'
 
 import vertexPars from './shaders/vertex_pars.glsl'
 import vertexMain from './shaders/vertex_main.glsl'
-
-import fragmentMain from './shaders/fragment_main.glsl'
 import fragmentPars from './shaders/fragment_pars.glsl'
+import fragmentMain from './shaders/fragment_main.glsl'
+
 
 const startApp = () => {
   const scene = useScene()
   const camera = useCamera()
   const gui = useGui()
   const { width, height } = useRenderSize()
-  // loadFont()
+
   // settings
   const MOTION_BLUR_AMOUNT = 0.725
 
@@ -34,34 +33,9 @@ const startApp = () => {
   const ambientLight = new THREE.AmbientLight('#4255ff', 0.5)
   scene.add(dirLight, ambientLight)
 
-  // font
-
-  var loader = new FontLoader()
-  var pivot;
-  var text;
-  loader.load("fonts/helvetiker_regular.typeface.json", (font) => {
-    console.log("aasdlkjhasld")
-    var dummy = new THREE.MeshBasicMaterial({color: '0x00b294',wireframe:'true'})
-    obj = new TextGeometry("AT", {
-
-      font: font,
-      size: 20,
-      height: 5,
-      curveSegments: 1,
-      bevelEnabled: false
-    });
-    
-    console.log(font)
-    text = new THREE.Mesh( obj, dummy );
-    text.position.x = 0;
-    text.position.y = 0;
-    text.position.z = 0;
-    // text.rotation.y = 13
-    scene.add(text)
-  })
   
   // meshes
-  const geometry = new THREE.IcosahedronGeometry(0,400)
+  const geometry = new THREE.IcosahedronGeometry(1,400)
   const material = new THREE.MeshStandardMaterial({
     onBeforeCompile: (shader) => {
       // store shader reference
@@ -101,6 +75,22 @@ const startApp = () => {
 
   cameraFolder.open()
 
+  // save pass
+  const savePass = new SavePass(new THREE.WebGLRenderTarget(width, height, renderTargetParameters))
+
+  // blend pass
+  const blendPass = new ShaderPass(BlendShader, 'tDiffuse1')
+  blendPass.uniforms['tDiffuse2'].value = savePass.renderTarget.texture
+  blendPass.uniforms['mixRatio'].value = MOTION_BLUR_AMOUNT
+
+  // output pass
+  const outputPass = new ShaderPass(CopyShader)
+  outputPass.renderToScreen = true
+
+  // adding passes to composer
+  addPass(blendPass)
+  addPass(savePass)
+  addPass(outputPass)
 
   // postprocessing
   const renderTargetParameters = {
